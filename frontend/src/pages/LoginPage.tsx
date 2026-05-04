@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { Trophy, Mail, Lock, Eye, EyeOff, ArrowRight } from 'lucide-react'
 import { useAuthStore } from '../store/authStore'
+import { apiLogin } from '../lib/api'
 import PageWrapper from '../components/ui/PageWrapper'
 import NeonButton from '../components/ui/NeonButton'
 
@@ -20,10 +21,14 @@ export default function LoginPage() {
     if (!email || !password) { setError('Please fill all fields'); return }
     setLoading(true)
     setError('')
-    await new Promise((r) => setTimeout(r, 900))
-    const name = email.split('@')[0].replace(/[._]/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
-    login(email, name, 'organizer')
-    navigate('/dashboard')
+    try {
+      const { user, token } = await apiLogin(email, password)
+      login(user, token)
+      navigate('/dashboard')
+    } catch (err: unknown) {
+      setError((err as Error).message || 'Login failed')
+      setLoading(false)
+    }
   }
 
   return (

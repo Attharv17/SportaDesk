@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { Trophy, Mail, Lock, User, Eye, EyeOff, ArrowRight } from 'lucide-react'
 import { useAuthStore } from '../store/authStore'
+import { apiRegister } from '../lib/api'
 import PageWrapper from '../components/ui/PageWrapper'
 import NeonButton from '../components/ui/NeonButton'
 import type { UserRole } from '../types'
@@ -30,9 +31,14 @@ export default function SignupPage() {
     if (password.length < 4) { setError('Password must be at least 4 characters'); return }
     setLoading(true)
     setError('')
-    await new Promise((r) => setTimeout(r, 900))
-    login(email, name, role)
-    navigate('/dashboard')
+    try {
+      const { user, token } = await apiRegister({ name, email, password, role })
+      login(user, token)
+      navigate('/dashboard')
+    } catch (err: unknown) {
+      setError((err as Error).message || 'Registration failed')
+      setLoading(false)
+    }
   }
 
   return (

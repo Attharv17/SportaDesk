@@ -1,4 +1,4 @@
-import { Suspense } from 'react'
+import { Suspense, useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { Trophy, Sword, Activity, Users, PlusCircle } from 'lucide-react'
@@ -11,14 +11,25 @@ import TournamentCard from '../components/tournaments/TournamentCard'
 import ParticleField from '../components/three/ParticleField'
 import { useAuthStore } from '../store/authStore'
 import { useTournamentStore } from '../store/tournamentStore'
-import { mockStats } from '../lib/mockData'
+import { apiGetStats } from '../lib/api'
 import NeonButton from '../components/ui/NeonButton'
 
 export default function DashboardPage() {
   const user = useAuthStore((s) => s.user)
-  const tournaments = useTournamentStore((s) => s.tournaments)
+  const { tournaments, fetchTournaments } = useTournamentStore()
   const myTournaments = tournaments.slice(0, 3)
 
+  const [stats, setStats] = useState({
+    activeTournaments: 0,
+    totalMatches: 0,
+    totalTeams: 0,
+    revenueEstimate: '—',
+  })
+
+  useEffect(() => {
+    fetchTournaments({ limit: 10 })
+    apiGetStats().then(setStats).catch(console.error)
+  }, [])
   return (
     <PageWrapper className="min-h-screen bg-bg-base">
       <Navbar />
@@ -72,13 +83,13 @@ export default function DashboardPage() {
 
             {/* Stats Grid */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-              <StatsCard label="Active Tournaments" value={mockStats.activeTournaments}
+              <StatsCard label="Active Tournaments" value={stats.activeTournaments}
                 icon={<Trophy size={18} />} trend="+2 this month" trendUp color="cyan" delay={0.1} />
-              <StatsCard label="Total Matches" value={mockStats.totalMatches}
+              <StatsCard label="Total Matches" value={stats.totalMatches}
                 icon={<Activity size={18} />} trend="+5 this week" trendUp color="lime" delay={0.2} />
-              <StatsCard label="Total Teams" value={mockStats.totalTeams}
+              <StatsCard label="Total Teams" value={stats.totalTeams}
                 icon={<Users size={18} />} trend="+3 new" trendUp color="magenta" delay={0.3} />
-              <StatsCard label="Prize Pool" value={mockStats.revenueEstimate}
+              <StatsCard label="Prize Pool" value={stats.revenueEstimate}
                 icon={<Sword size={18} />} trend="All seasons" color="yellow" delay={0.4} />
             </div>
 

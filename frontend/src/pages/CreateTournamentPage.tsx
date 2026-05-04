@@ -7,7 +7,6 @@ import Sidebar from '../components/layout/Sidebar'
 import PageWrapper from '../components/ui/PageWrapper'
 import NeonButton from '../components/ui/NeonButton'
 import { useTournamentStore } from '../store/tournamentStore'
-import { useAuthStore } from '../store/authStore'
 import type { CreateTournamentForm, Sport, TournamentFormat } from '../types'
 
 const STEPS = ['Basic Info', 'Format', 'Teams', 'Schedule', 'Review']
@@ -57,8 +56,7 @@ export default function CreateTournamentPage() {
   const [step, setStep] = useState(0)
   const [form, setForm] = useState<CreateTournamentForm>(EMPTY)
   const [creating, setCreating] = useState(false)
-  const addTournament = useTournamentStore((s) => s.addTournament)
-  const user = useAuthStore((s) => s.user)
+  const { createTournament } = useTournamentStore()
   const navigate = useNavigate()
 
   const set = (k: keyof CreateTournamentForm, v: any) => setForm((f) => ({ ...f, [k]: v }))
@@ -72,9 +70,13 @@ export default function CreateTournamentPage() {
 
   const handleCreate = async () => {
     setCreating(true)
-    await new Promise((r) => setTimeout(r, 1000))
-    const t = addTournament(form, user?.id ?? 'demo')
-    navigate(`/tournaments/${t.id}`)
+    try {
+      const t = await createTournament(form)
+      navigate(`/tournaments/${t.id}`)
+    } catch (err) {
+      console.error('Failed to create tournament:', err)
+      setCreating(false)
+    }
   }
 
   const updateTeam = (i: number, val: string) => {

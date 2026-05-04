@@ -1,4 +1,4 @@
-import { useState, Suspense } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ArrowLeft, Users, Calendar, Trophy, Activity, BarChart2, Zap } from 'lucide-react'
@@ -10,9 +10,10 @@ import MatchCard from '../components/tournaments/MatchCard'
 import StandingsTable from '../components/tournaments/StandingsTable'
 import TournamentBracket from '../components/tournaments/TournamentBracket'
 import ParticleField from '../components/three/ParticleField'
-import { useTournamentStore } from '../store/tournamentStore'
 import { sportConfig } from '../lib/mockData'
 import { formatDate } from '../lib/utils'
+import { apiGetTournament } from '../lib/api'
+import type { Tournament } from '../types'
 
 const TABS = [
   { id: 'overview',  label: 'Overview',   icon: <Trophy size={14} /> },
@@ -26,11 +27,18 @@ const TABS = [
 export default function TournamentDetailPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
-  const getTournamentById = useTournamentStore((s) => s.getTournamentById)
-  const tournament = getTournamentById(id ?? '')
+  const [tournament, setTournament] = useState<Tournament | null>(null)
+  const [loadError, setLoadError] = useState(false)
   const [activeTab, setActiveTab] = useState('overview')
 
-  if (!tournament) {
+  useEffect(() => {
+    if (!id) return
+    apiGetTournament(id)
+      .then(setTournament)
+      .catch(() => setLoadError(true))
+  }, [id])
+
+  if (loadError || (!tournament && loadError)) {
     return (
       <PageWrapper className="min-h-screen bg-bg-base flex items-center justify-center">
         <Navbar />
@@ -40,6 +48,18 @@ export default function TournamentDetailPage() {
           <NeonButton variant="ghost" onClick={() => navigate('/tournaments')}>
             <ArrowLeft size={16} /> Back
           </NeonButton>
+        </div>
+      </PageWrapper>
+    )
+  }
+
+  if (!tournament) {
+    return (
+      <PageWrapper className="min-h-screen bg-bg-base flex items-center justify-center">
+        <Navbar />
+        <div className="text-center">
+          <div className="w-8 h-8 border-2 border-cyan-neon/30 border-t-cyan-neon rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-gray-500 text-sm">Loading tournament…</p>
         </div>
       </PageWrapper>
     )

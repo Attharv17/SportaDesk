@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { Search, Filter } from 'lucide-react'
 import { Link } from 'react-router-dom'
@@ -7,8 +7,8 @@ import Sidebar from '../components/layout/Sidebar'
 import PageWrapper, { staggerContainer, fadeUp } from '../components/ui/PageWrapper'
 import TournamentCard from '../components/tournaments/TournamentCard'
 import NeonButton from '../components/ui/NeonButton'
-import { useTournamentStore } from '../store/tournamentStore'
-import type { Sport, TournamentStatus } from '../types'
+import { apiGetTournaments } from '../lib/api'
+import type { Tournament, Sport, TournamentStatus } from '../types'
 
 const sportOptions: { label: string; value: Sport | 'all' }[] = [
   { label: 'All Sports', value: 'all' },
@@ -26,17 +26,20 @@ const statusOptions: { label: string; value: TournamentStatus | 'all' }[] = [
 ]
 
 export default function TournamentsPage() {
-  const tournaments = useTournamentStore((s) => s.tournaments)
   const [query, setQuery] = useState('')
   const [sport, setSport] = useState<Sport | 'all'>('all')
   const [status, setStatus] = useState<TournamentStatus | 'all'>('all')
+  const [filtered, setFiltered] = useState<Tournament[]>([])
 
-  const filtered = tournaments.filter((t) => {
-    const matchQuery = t.name.toLowerCase().includes(query.toLowerCase()) || t.venue.toLowerCase().includes(query.toLowerCase())
-    const matchSport = sport === 'all' || t.sport === sport
-    const matchStatus = status === 'all' || t.status === status
-    return matchQuery && matchSport && matchStatus
-  })
+  useEffect(() => {
+    let cancelled = false
+    const timer = setTimeout(() => {
+      apiGetTournaments({ search: query, sport, status, limit: 50 })
+        .then((result) => { if (!cancelled) setFiltered(result.data) })
+        .catch(console.error)
+    }, 300)
+    return () => { cancelled = true; clearTimeout(timer) }
+  }, [query, sport, status])
 
   return (
     <PageWrapper className="min-h-screen bg-bg-base">

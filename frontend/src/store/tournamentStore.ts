@@ -1,42 +1,40 @@
 import { create } from 'zustand'
 import type { Tournament, CreateTournamentForm } from '../types'
-import { mockTournaments } from '../lib/mockData'
+import { apiGetTournaments, apiCreateTournament, type TournamentQueryParams } from '../lib/api'
 
 interface TournamentState {
   tournaments: Tournament[]
   currentTournament: Tournament | null
+  loading: boolean
+  error: string | null
   setCurrentTournament: (t: Tournament | null) => void
-  addTournament: (form: CreateTournamentForm, organizerId: string) => Tournament
+  fetchTournaments: (params?: TournamentQueryParams) => Promise<void>
+  createTournament: (form: CreateTournamentForm) => Promise<Tournament>
   getTournamentById: (id: string) => Tournament | undefined
 }
 
 export const useTournamentStore = create<TournamentState>((set, get) => ({
-  tournaments: mockTournaments,
-  currentTournament: null,
+  tournaments:        [],
+  currentTournament:  null,
+  loading:            false,
+  error:              null,
 
   setCurrentTournament: (t) => set({ currentTournament: t }),
 
-  addTournament: (form, organizerId) => {
-    const newTournament: Tournament = {
-      id: `t_${Date.now()}`,
-      name: form.name,
-      sport: form.sport as Tournament['sport'],
-      format: form.format as Tournament['format'],
-      status: 'upcoming',
-      startDate: form.startDate,
-      endDate: form.endDate,
-      venue: form.venue,
-      description: form.description,
-      maxTeams: form.maxTeams,
-      registeredTeams: [],
-      matches: [],
-      organizerId,
-      prizePool: form.prizePool,
-      entryFee: form.entryFee,
-      createdAt: new Date().toISOString(),
+  fetchTournaments: async (params = {}) => {
+    set({ loading: true, error: null })
+    try {
+      const result = await apiGetTournaments(params)
+      set({ tournaments: result.data, loading: false })
+    } catch (err: unknown) {
+      set({ error: (err as Error).message, loading: false })
     }
-    set((s) => ({ tournaments: [newTournament, ...s.tournaments] }))
-    return newTournament
+  },
+
+  createTournament: async (form) => {
+    const tournament = await apiCreateTournament(form)
+    set((s) => ({ tournaments: [tournament, ...s.tournaments] }))
+    return tournament
   },
 
   getTournamentById: (id) => get().tournaments.find((t) => t.id === id),

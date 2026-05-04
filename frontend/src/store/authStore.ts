@@ -1,11 +1,12 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import type { User, UserRole } from '../types'
+import type { User } from '../types'
 
 interface AuthState {
   user: User | null
+  token: string | null
   isAuthenticated: boolean
-  login: (email: string, name: string, role: UserRole) => void
+  login: (user: User, token: string) => void
   logout: () => void
 }
 
@@ -13,25 +14,18 @@ export const useAuthStore = create<AuthState>()(
   persist(
     (set) => ({
       user: null,
+      token: null,
       isAuthenticated: false,
 
-      login: (email, name, role) => {
-        const user: User = {
-          id: `user_${Date.now()}`,
-          name,
-          email,
-          role,
-          createdAt: new Date().toISOString(),
-        }
-        set({ user, isAuthenticated: true })
+      // Called after a successful /api/auth/login or /api/auth/register response
+      login: (user, token) => {
+        set({ user, token, isAuthenticated: true })
       },
 
       logout: () => {
-        set({ user: null, isAuthenticated: false })
+        set({ user: null, token: null, isAuthenticated: false })
       },
     }),
-    {
-      name: 'sportsdesk-auth',
-    }
+    { name: 'sportsdesk-auth' }
   )
 )

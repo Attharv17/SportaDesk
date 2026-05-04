@@ -1,13 +1,28 @@
 import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
-import { useTournamentStore } from '../../store/tournamentStore'
 import { sportConfig } from '../../lib/mockData'
+import { apiGetLiveMatches } from '../../lib/api'
+import type { Match } from '../../types'
+
+const POLL_INTERVAL = 15_000   // re-fetch live scores every 15 s
 
 export default function MatchTicker() {
-  const tournaments = useTournamentStore((s) => s.tournaments)
-  const liveMatches = tournaments.flatMap((t) => t.matches.filter((m) => m.status === 'live'))
+  const [liveMatches, setLiveMatches] = useState<Match[]>([])
   const [index, setIndex] = useState(0)
 
+  // Fetch on mount and poll on interval
+  useEffect(() => {
+    const load = () =>
+      apiGetLiveMatches()
+        .then((res) => setLiveMatches(res.data))
+        .catch(console.error)
+
+    load()
+    const poll = setInterval(load, POLL_INTERVAL)
+    return () => clearInterval(poll)
+  }, [])
+
+  // Auto-cycle through live matches every 4 s
   useEffect(() => {
     if (liveMatches.length === 0) return
     const id = setInterval(() => setIndex((i) => (i + 1) % liveMatches.length), 4000)
