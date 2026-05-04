@@ -10,6 +10,11 @@ const tournamentRoutes = require('./routes/tournaments');
 const matchRoutes      = require('./routes/matches');
 const dashboardRoutes  = require('./routes/dashboard');
 
+// Role-based route modules
+const organizerRoutes  = require('./routes/organizer');
+const managerRoutes    = require('./routes/manager');
+const playerRoutes     = require('./routes/player');
+
 const app  = express();
 const PORT = process.env.PORT || 5000;
 
@@ -31,6 +36,11 @@ app.use('/api/auth',        authRoutes);
 app.use('/api/tournaments', tournamentRoutes);
 app.use('/api/matches',     matchRoutes);
 app.use('/api/dashboard',   dashboardRoutes);
+
+// Role-based namespaces
+app.use('/api/organizer',   organizerRoutes);
+app.use('/api/manager',     managerRoutes);
+app.use('/api/player',      playerRoutes);
 
 // ─── 404 handler ──────────────────────────────────────────────────────────────
 app.use((_req, res) => res.status(404).json({ error: 'Route not found' }));

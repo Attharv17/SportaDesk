@@ -47,7 +47,7 @@ const findLive = async (tournamentId = null) => {
      LEFT JOIN kabaddi_scores ks ON ks.match_id = m.id
      LEFT JOIN generic_scores gs ON gs.match_id = m.id
      WHERE m.status = 'live' ${scopeClause}
-     ORDER BY m.scheduled_at`,
+     ORDER BY m.start_time`,
     params
   );
 
@@ -132,4 +132,52 @@ const upsertScore = async (matchId, sport, homeScore, awayScore) => {
   }
 };
 
-module.exports = { findLive, upsertScore };
+/**
+ * Fetch matches for teams managed by a specific user.
+ * GET /api/manager/matches
+ */
+const findByManager = async (managerId) => {
+  const { rows } = await query(
+    `SELECT
+       m.*,
+       t.name AS tournament_name,
+       JSON_OBJECT('id', ht.id, 'name', ht.name, 'color', ht.color) AS home_team,
+       JSON_OBJECT('id', at.id, 'name', at.name, 'color', at.color) AS away_team,
+       -- Cricket
+       cs.home_runs    AS cs_home_runs,
+       cs.home_wickets AS cs_home_wickets,
+       cs.home_overs   AS cs_home_overs,
+       cs.home_extras  AS cs_home_extras,
+       cs.away_runs    AS cs_away_runs,
+       cs.away_wickets AS cs_away_wickets,
+       cs.away_overs   AS cs_away_overs,
+       cs.away_extras  AS cs_away_extras,
+       -- Kabaddi
+       ks.home_points  AS ks_home_points,
+       ks.home_raids   AS ks_home_raids,
+       ks.home_tackles AS ks_home_tackles,
+       ks.away_points  AS ks_away_points,
+       ks.away_raids   AS ks_away_raids,
+       ks.away_tackles AS ks_away_tackles,
+       -- Generic (football, basketball, etc.)
+       gs.home_score   AS gs_home_score,
+       gs.away_score   AS gs_away_score
+     FROM matches m
+     JOIN tournaments t  ON t.id  = m.tournament_id
+     JOIN teams       ht ON ht.id = m.home_team_id
+     JOIN teams       at ON at.id = m.away_team_id
+     LEFT JOIN cricket_scores cs ON cs.match_id = m.id
+     LEFT JOIN kabaddi_scores ks ON ks.match_id = m.id
+     LEFT JOIN generic_scores gs ON gs.match_id = m.id
+     WHERE ht.manager_id = ? OR at.manager_id = ?
+     ORDER BY m.start_time DESC`,
+    [managerId, managerId]
+  );
+
+  return rows.map((r) => ({
+    ...mapMatchRow(r),
+    tournamentName: r.tournament_name,
+  }));
+};
+
+module.exports = { findLive, upsertScore, findByManager };

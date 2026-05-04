@@ -148,6 +148,43 @@ const getTournamentStandings = async (req, res, next) => {
   }
 };
 
+// ─── PUT /api/tournaments/:id ───────────────────────────────────────────────────
+const updateTournament = async (req, res, next) => {
+  try {
+    const { name, description, status, venue } = req.body;
+    const tournament = await tournamentModel.findById(req.params.id);
+    if (!tournament) return res.status(404).json({ error: 'Tournament not found' });
+    
+    // Authorization check
+    if (tournament.organizerId !== req.user.id && req.user.role !== 'admin') {
+      return res.status(403).json({ error: 'Not authorized to update this tournament' });
+    }
+
+    const updated = await tournamentModel.update(req.params.id, { name, description, status, venue });
+    res.json(serializeTournament(updated));
+  } catch (err) {
+    next(err);
+  }
+};
+
+// ─── DELETE /api/tournaments/:id ──────────────────────────────────────────────
+const deleteTournament = async (req, res, next) => {
+  try {
+    const tournament = await tournamentModel.findById(req.params.id);
+    if (!tournament) return res.status(404).json({ error: 'Tournament not found' });
+
+    // Authorization check
+    if (tournament.organizerId !== req.user.id && req.user.role !== 'admin') {
+      return res.status(403).json({ error: 'Not authorized to delete this tournament' });
+    }
+
+    await tournamentModel.remove(req.params.id);
+    res.json({ message: 'Tournament deleted successfully' });
+  } catch (err) {
+    next(err);
+  }
+};
+
 // ─── GET /api/tournaments/:id/bracket ────────────────────────────────────────
 const getTournamentBracket = async (req, res, next) => {
   try {
@@ -162,6 +199,8 @@ module.exports = {
   listTournaments,
   getTournament,
   createTournament,
+  updateTournament,
+  deleteTournament,
   getTournamentTeams,
   getTournamentMatches,
   getTournamentStandings,

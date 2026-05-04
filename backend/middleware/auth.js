@@ -4,7 +4,7 @@ const jwt = require('jsonwebtoken');
  * Middleware: verify Bearer JWT on protected routes.
  * Sets req.user = { id, email, role } on success.
  */
-module.exports = (req, res, next) => {
+const verifyToken = (req, res, next) => {
   const authHeader = req.headers['authorization'];
 
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -21,3 +21,17 @@ module.exports = (req, res, next) => {
     return res.status(401).json({ error: 'Invalid or expired token' });
   }
 };
+
+/**
+ * Middleware: authorize specific roles.
+ */
+const authorizeRoles = (...roles) => {
+  return (req, res, next) => {
+    if (!req.user || !roles.includes(req.user.role)) {
+      return res.status(403).json({ error: 'Forbidden: Insufficient role permissions' });
+    }
+    next();
+  };
+};
+
+module.exports = { verifyToken, authorizeRoles };

@@ -34,4 +34,14 @@ const updateScore = async (req, res, next) => {
   }
 };
 
-module.exports = { getLiveMatches, updateScore };
+// ─── GET /api/manager/matches ──────────────────────────────────────────────────
+const getManagerMatches = async (req, res, next) => {
+  try {
+    const matches = await matchModel.findByManager(req.user.id);
+    res.json({ data: matches });
+  } catch (err) {
+    next(err);
+  }
+};
+
+module.exports = { getLiveMatches, updateScore, getManagerMatches };

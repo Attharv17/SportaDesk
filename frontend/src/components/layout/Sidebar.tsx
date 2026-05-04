@@ -1,21 +1,38 @@
 import { Link, useLocation } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import {
-  LayoutDashboard, Sword, PlusCircle, Trophy, Settings, ChevronLeft, ChevronRight,
+  LayoutDashboard, Sword, PlusCircle, Trophy, Shield, Star,
+  ChevronLeft, ChevronRight,
 } from 'lucide-react'
 import { useState } from 'react'
+import { useAuthStore } from '../../context/authContext'
 
-const links = [
-  { to: '/dashboard', label: 'Dashboard', icon: <LayoutDashboard size={18} /> },
-  { to: '/tournaments', label: 'Tournaments', icon: <Sword size={18} /> },
-  { to: '/tournaments/create', label: 'Create New', icon: <PlusCircle size={18} /> },
-  { to: '/dashboard', label: 'My Trophies', icon: <Trophy size={18} /> },
-  { to: '/dashboard', label: 'Settings', icon: <Settings size={18} /> },
-]
+// Role-specific nav links — each role only sees what it needs
+const allLinks = {
+  organizer: [
+    { to: '/organizer/dashboard', label: 'Dashboard',         icon: <LayoutDashboard size={18} /> },
+    { to: '/tournaments',          label: 'Tournaments',       icon: <Sword size={18} /> },
+    { to: '/tournaments/create',   label: 'Create Tournament', icon: <PlusCircle size={18} /> },
+  ],
+  manager: [
+    { to: '/manager/dashboard', label: 'Dashboard', icon: <LayoutDashboard size={18} /> },
+    { to: '/tournaments',        label: 'Tournaments', icon: <Trophy size={18} /> },
+    { to: '/manager/dashboard', label: 'My Teams',    icon: <Shield size={18} /> },
+  ],
+  player: [
+    { to: '/player/dashboard', label: 'Dashboard',      icon: <LayoutDashboard size={18} /> },
+    { to: '/tournaments',       label: 'Tournaments',    icon: <Trophy size={18} /> },
+    { to: '/player/dashboard', label: 'My Performance', icon: <Star size={18} /> },
+  ],
+}
 
 export default function Sidebar() {
-  const location = useLocation()
+  const location  = useLocation()
+  const user      = useAuthStore((s) => s.user)
   const [collapsed, setCollapsed] = useState(false)
+
+  const role  = (user?.role as keyof typeof allLinks) ?? 'player'
+  const links = allLinks[role] ?? allLinks.player
 
   return (
     <motion.aside
@@ -53,7 +70,6 @@ export default function Sidebar() {
         })}
       </div>
 
-      {/* Collapse Toggle */}
       <button
         onClick={() => setCollapsed(!collapsed)}
         className="mx-2 mb-4 p-2 rounded-xl text-gray-500 hover:text-cyan-neon hover:bg-cyan-neon/10 transition-all duration-200 flex justify-center"

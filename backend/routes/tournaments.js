@@ -1,12 +1,13 @@
 const router     = require('express').Router();
-const auth       = require('../middleware/auth');
+const { verifyToken, authorizeRoles } = require('../middleware/auth');
 const controller = require('../controllers/tournamentController');
 
 // All tournament routes require authentication
-router.use(auth);
+router.use(verifyToken);
 
 router.get('/',                    controller.listTournaments);
-router.post('/',                   controller.createTournament);
+// Creating a tournament should be organizer only
+router.post('/',                   authorizeRoles('organizer'), controller.createTournament);
 router.get('/:id',                 controller.getTournament);
 router.get('/:id/teams',           controller.getTournamentTeams);
 router.get('/:id/matches',         controller.getTournamentMatches);

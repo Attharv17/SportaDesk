@@ -35,7 +35,7 @@ const register = async (req, res, next) => {
       return res.status(409).json({ error: 'Email already in use' });
 
     const passwordHash = await bcrypt.hash(password, 12);
-    const user         = await userModel.create({ name, email, passwordHash, role: role || 'organizer' });
+    const user         = await userModel.create({ name, email, passwordHash, role: role || 'player' });
     const token        = signToken(user);
 
     res.status(201).json({ token, user: formatUser(user) });

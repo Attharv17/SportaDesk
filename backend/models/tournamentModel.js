@@ -43,7 +43,7 @@ const mapMatchRow = (m) => ({
   tournamentId: m.tournament_id,
   homeTeam:     typeof m.home_team === 'string' ? JSON.parse(m.home_team) : m.home_team,
   awayTeam:     typeof m.away_team === 'string' ? JSON.parse(m.away_team) : m.away_team,
-  date:         m.scheduled_at,
+  date:         m.start_time,
   venue:        m.venue,
   status:       m.status,
   round:        m.round || null,
@@ -232,7 +232,7 @@ const getMatches = async (tournamentId, status = null) => {
      LEFT JOIN kabaddi_scores  ks ON ks.match_id = m.id
      LEFT JOIN generic_scores  gs ON gs.match_id = m.id
      WHERE m.tournament_id = ? ${statusClause}
-     ORDER BY m.scheduled_at`,
+     ORDER BY m.start_time`,
     params
   );
 
@@ -287,4 +287,26 @@ const getBracket = async (tournamentId) => {
   return rounds;
 };
 
-module.exports = { findAll, findById, create, getTeams, getMatches, getStandings, getBracket, mapMatchRow };
+// ─── UPDATE tournament ────────────────────────────────────────────────────────
+const update = async (id, { name, description, status, venue }) => {
+  const updates = [];
+  const params = [];
+  
+  if (name !== undefined) { updates.push('name = ?'); params.push(name); }
+  if (description !== undefined) { updates.push('description = ?'); params.push(description); }
+  if (status !== undefined) { updates.push('status = ?'); params.push(status); }
+  if (venue !== undefined) { updates.push('venue = ?'); params.push(venue); }
+  
+  if (updates.length > 0) {
+    params.push(id);
+    await query(`UPDATE tournaments SET ${updates.join(', ')} WHERE id = ?`, params);
+  }
+  return findById(id);
+};
+
+// ─── DELETE tournament ────────────────────────────────────────────────────────
+const remove = async (id) => {
+  await query(`DELETE FROM tournaments WHERE id = ?`, [id]);
+};
+
+module.exports = { findAll, findById, create, update, remove, getTeams, getMatches, getStandings, getBracket, mapMatchRow };

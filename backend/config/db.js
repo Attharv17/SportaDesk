@@ -1,19 +1,22 @@
-const mysql = require('mysql2/promise');
+const mysql = require('mysql2');
 require('dotenv').config();
 
 const pool = mysql.createPool({
-  host:               process.env.DB_HOST     || 'localhost',
-  port:               parseInt(process.env.DB_PORT || '3306'),
-  database:           process.env.DB_NAME     || 'sportadesk',
-  user:               process.env.DB_USER     || 'root',
-  password:           process.env.DB_PASSWORD || '',
+  host: process.env.DB_HOST || 'localhost',
+  port: parseInt(process.env.DB_PORT || '3306'),
+  user: process.env.DB_USER || 'root',
+  password: process.env.DB_PASS || process.env.DB_PASSWORD || '',
+  database: process.env.DB_NAME || 'sportadesk',
   waitForConnections: true,
-  connectionLimit:    10,
-  queueLimit:         0,
+  connectionLimit: 10,
+  queueLimit: 0
 });
 
+// Use promise-based wrapper for the pool
+const promisePool = pool.promise();
+
 // Verify connection on startup
-pool.getConnection()
+promisePool.getConnection()
   .then((conn) => { console.log('✅ Connected to MySQL'); conn.release(); })
   .catch((err) => { console.error('❌ MySQL connection error:', err.message); process.exit(-1); });
 
@@ -24,7 +27,7 @@ pool.getConnection()
  *  - UPDATE/DELETE → { rows: [], affectedRows: number }
  */
 const query = async (sql, params = []) => {
-  const [result] = await pool.execute(sql, params);
+  const [result] = await promisePool.execute(sql, params);
   return {
     rows:         Array.isArray(result) ? result : [],
     insertId:     result.insertId     ?? null,
@@ -32,4 +35,5 @@ const query = async (sql, params = []) => {
   };
 };
 
-module.exports = { pool, query };
+// Export promisePool and custom query wrapper for backwards compatibility
+module.exports = { pool: promisePool, query };

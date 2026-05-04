@@ -1,13 +1,13 @@
 /**
- * Global error-handling middleware.
- * Must be registered LAST in Express (4 arguments).
+ * Global error handler middleware
  */
-// eslint-disable-next-line no-unused-vars
 module.exports = (err, req, res, next) => {
-  console.error(`[ERROR] ${req.method} ${req.path} →`, err.message);
-
-  const status  = err.status  || 500;
+  console.error('Unhandled Error:', err);
+  const status = err.status || 500;
   const message = err.message || 'Internal Server Error';
-
-  res.status(status).json({ error: message });
+  
+  res.status(status).json({
+    error: message,
+    ...(process.env.NODE_ENV === 'development' && { stack: err.stack }),
+  });
 };
